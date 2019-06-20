@@ -5,6 +5,9 @@ from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 from matplotlib import pyplot as plt
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 
 random_state = 1
 
@@ -48,6 +51,36 @@ def plot_test_size_influence_over_score(clfs, min_proportion=.1, max_proportion=
     plt.ylabel('Score')
     plt.show()
 
+def apply_PCA(data, explained_proportion=None, show=False):
+    pca = PCA()
+
+    # Important : Normalize data to have homogenous features
+    pipeline = Pipeline([('scaling', StandardScaler()), ('pca', pca)])
+    pipeline.fit_transform(data)
+
+    if explained_proportion == None:
+        return data
+
+    # Determine how many components to keep
+    explained_ratio = np.cumsum(pca.explained_variance_ratio_)
+    p=0
+    for k in range(len(explained_ratio)):
+        if explained_ratio[k] >= explained_proportion:
+            p=k
+            break
+    print('Keeping {} components to explain {}% of the variance'.format(p, 100*explained_proportion))
+
+    if show:
+        eigen_values = pca.explained_variance_
+        plt.plot(range(len(eigen_values)), eigen_values)
+        plt.axvline(p, c='orange')
+        plt.xlabel('Eigenvalue index')
+        plt.ylabel('Eigenvalue')
+        plt.show()        
+
+    return data[:, :p]
+
+
 if __name__ == '__main__':
 
     clfs = {
@@ -59,4 +92,40 @@ if __name__ == '__main__':
 
     print(fit_and_score_clfs(clfs))
 
-    plot_test_size_influence_over_score(clfs, N=30)
+    # plot_test_size_influence_over_score(clfs, N=30)
+    # pca = PCA()
+    # # pca.fit(X)
+    # pipeline = Pipeline([('scaling', StandardScaler()), ('pca', pca)])
+    # pipeline.fit_transform(X)
+
+    # explained_ratio = pca.explained_variance_ratio_
+    # # print(explained_ratio)
+    # # print(np.cumsum(explained_ratio))
+
+    # # eigen_values = pca.singular_values_
+    # eigen_values = pca.explained_variance_
+    # cumsum_eigen_values = np.cumsum(eigen_values)
+    # cumsum_eigen_values = cumsum_eigen_values/cumsum_eigen_values[-1]
+    # print(np.cumsum(explained_ratio))
+    # print(cumsum_eigen_values)
+
+    # p=0
+    # p_explained = 0.95
+    # for k in range(len(cumsum_eigen_values)):
+    #     if cumsum_eigen_values[k] > p_explained:
+    #         p=k
+    #         break
+
+    # print(p)
+
+    # plt.plot(range(len(eigen_values)), eigen_values)
+    # plt.axvline(p, c='orange')
+    # plt.xlabel('Eigenvalue index')
+    # plt.ylabel('Eigenvalue')
+    # plt.show()
+    # print(X.shape)
+
+    # # plt.plot(range(len(explained_ratio)), np.cumsum(explained_ratio))
+    # # plt.show()
+    X_PCA = apply_PCA(X, explained_proportion=.95, show=False)
+    print(X_PCA.shape)
