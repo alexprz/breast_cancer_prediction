@@ -18,9 +18,12 @@ X = np.array(df)[:, 2:-1]
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=random_state)
 
-def fit_and_score_clfs(clfs, test_size=0.5):
+def fit_and_score_clfs(clfs, X=X, y=y, test_size=0.5):
     '''
-        clfs: dict of clfs
+        Given a dict of classifiers, return a dict of scores obtained by fitting each classifier
+        on the set (X, y) with the given test_proportion
+
+        clfs: dict of classifiers
                 key: name of clf
                 value: clf object
     '''
@@ -32,13 +35,20 @@ def fit_and_score_clfs(clfs, test_size=0.5):
 
     return scores
 
-def plot_test_size_influence_over_score(clfs, min_proportion=.1, max_proportion=.9, N=10):
+def plot_test_size_influence_over_score(clfs, min_proportion=.1, max_proportion=.9, N=10, X=X, y=y):
+    '''
+        Plot the influence of test_size over scores obtained with the given classifiers on the given dataset (X, y)
+        
+        clfs: dict of classifiers
+                key: name of clf
+                value: clf object
+    '''
     scores_dict = {name:list() for name in clfs.keys()}
     prop_list = np.linspace(min_proportion, max_proportion, N)
 
     for test_size in prop_list:
         print(test_size)
-        new_scores = fit_and_score_clfs(clfs, test_size=test_size)
+        new_scores = fit_and_score_clfs(clfs, X=X, y=y, test_size=test_size)
         for name, score in scores_dict.items():
             score.append(new_scores[name])
 
@@ -51,22 +61,26 @@ def plot_test_size_influence_over_score(clfs, min_proportion=.1, max_proportion=
     plt.ylabel('Score')
     plt.show()
 
-def apply_PCA(data, explained_proportion=None, show=False):
+def find_optimal_dimension(data, explained_proportion, show=False):
+    '''
+        Return how many dimensions to keep to explain a given proportion of the data.
+        Informative purpose only since this feature is already implemented in sklearn.
+        Use PCA(n_components=explained_proportion) instead.
+
+        data : array of shape (n_samples, n_features)
+        explained_proportion : float in [0, 1]
+    '''
     pca = PCA()
 
     # Important : Normalize data to have homogenous features
     pipeline = Pipeline([('scaling', StandardScaler()), ('pca', pca)])
-    pipeline.fit_transform(data)
-
-    if explained_proportion == None:
-        return data
+    data = pipeline.fit_transform(data)
 
     # Determine how many components to keep
     explained_ratio = np.cumsum(pca.explained_variance_ratio_)
-    p=0
     for k in range(len(explained_ratio)):
         if explained_ratio[k] >= explained_proportion:
-            p=k
+            p=k+1
             break
     print('Keeping {} components to explain {}% of the variance'.format(p, 100*explained_proportion))
 
@@ -76,10 +90,25 @@ def apply_PCA(data, explained_proportion=None, show=False):
         plt.axvline(p, c='orange')
         plt.xlabel('Eigenvalue index')
         plt.ylabel('Eigenvalue')
+        plt.title('Keeping {} components to explain {}% of the variance'.format(p, 100*explained_proportion))
         plt.show()        
 
-    return data[:, :p]
+    return p
 
+def apply_PCA(data, explained_proportion=None):
+    '''
+        Given a data array, normalize the data, apply PCA and reduce the dimension to
+        explain the given proportion of variance.
+
+        data : array of shape (n_samples, n_features)
+        explained_proportion : float in [0, 1]
+    '''
+    pca = PCA(n_components=explained_proportion)
+
+    # Important : Normalize data to have homogenous features
+    pipeline = Pipeline([('scaling', StandardScaler()), ('pca', pca)])
+    data = pipeline.fit_transform(data)
+    return data
 
 if __name__ == '__main__':
 
@@ -90,42 +119,12 @@ if __name__ == '__main__':
         'GradientBoostingClassifier': GradientBoostingClassifier(random_state=random_state)
     }
 
-    print(fit_and_score_clfs(clfs))
+    print('Scores on raw data :')
+    print(fit_and_score_clfs(clfs, X=X))
 
-    # plot_test_size_influence_over_score(clfs, N=30)
-    # pca = PCA()
-    # # pca.fit(X)
-    # pipeline = Pipeline([('scaling', StandardScaler()), ('pca', pca)])
-    # pipeline.fit_transform(X)
+    explained_proportion = .99
+    opt_dim = find_optimal_dimension(X, explained_proportion, show=True)
+    X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
 
-    # explained_ratio = pca.explained_variance_ratio_
-    # # print(explained_ratio)
-    # # print(np.cumsum(explained_ratio))
-
-    # # eigen_values = pca.singular_values_
-    # eigen_values = pca.explained_variance_
-    # cumsum_eigen_values = np.cumsum(eigen_values)
-    # cumsum_eigen_values = cumsum_eigen_values/cumsum_eigen_values[-1]
-    # print(np.cumsum(explained_ratio))
-    # print(cumsum_eigen_values)
-
-    # p=0
-    # p_explained = 0.95
-    # for k in range(len(cumsum_eigen_values)):
-    #     if cumsum_eigen_values[k] > p_explained:
-    #         p=k
-    #         break
-
-    # print(p)
-
-    # plt.plot(range(len(eigen_values)), eigen_values)
-    # plt.axvline(p, c='orange')
-    # plt.xlabel('Eigenvalue index')
-    # plt.ylabel('Eigenvalue')
-    # plt.show()
-    # print(X.shape)
-
-    # # plt.plot(range(len(explained_ratio)), np.cumsum(explained_ratio))
-    # # plt.show()
-    X_PCA = apply_PCA(X, explained_proportion=.95, show=False)
-    print(X_PCA.shape)
+    print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
+    print(fit_and_score_clfs(clfs, X=X_PCA))
