@@ -16,7 +16,6 @@ df = pd.read_csv('data.csv')
 y = np.array(df['diagnosis'] == 'M').astype(int)
 X = np.array(df)[:, 2:-1]
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=random_state)
 
 def fit_and_score_clfs(clfs, X=X, y=y, test_size=0.5):
     '''
@@ -121,10 +120,14 @@ if __name__ == '__main__':
 
     print('Scores on raw data :')
     print(fit_and_score_clfs(clfs, X=X))
+    # plot_test_size_influence_over_score(clfs, X=X)
+
 
     explained_proportion = .99
-    opt_dim = find_optimal_dimension(X, explained_proportion, show=True)
+    opt_dim = find_optimal_dimension(X, explained_proportion, show=False)
     X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
 
     print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
     print(fit_and_score_clfs(clfs, X=X_PCA))
+
+    # plot_test_size_influence_over_score(clfs, X=X_PCA)
