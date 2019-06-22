@@ -109,6 +109,26 @@ def apply_PCA(data, explained_proportion=None):
     data = pipeline.fit_transform(data)
     return data
 
+def plot_dim_influence_over_scores(clfs, X=X, y=y, test_size=0.5):
+    scores_dict = {name:list() for name in clfs.keys()}
+    prop_list = np.arange(1, X.shape[1]+1)
+
+    for prop in prop_list:
+        X_PCA = apply_PCA(X, explained_proportion=prop)
+        print(prop)
+        new_scores = fit_and_score_clfs(clfs, X=X_PCA, y=y, test_size=test_size)
+        for name, score in scores_dict.items():
+            score.append(new_scores[name])
+
+
+    for name, scores_list in scores_dict.items():
+        plt.plot(prop_list, scores_list, label=name)
+
+    plt.legend()
+    plt.xlabel('Explained proportion')
+    plt.ylabel('Score')
+    plt.show()
+
 if __name__ == '__main__':
 
     clfs = {
@@ -118,16 +138,18 @@ if __name__ == '__main__':
         'GradientBoostingClassifier': GradientBoostingClassifier(random_state=random_state)
     }
 
-    print('Scores on raw data :')
-    print(fit_and_score_clfs(clfs, X=X))
-    # plot_test_size_influence_over_score(clfs, X=X)
+    # print('Scores on raw data :')
+    # print(fit_and_score_clfs(clfs, X=X))
+    # # plot_test_size_influence_over_score(clfs, X=X)
 
 
-    explained_proportion = .99
-    opt_dim = find_optimal_dimension(X, explained_proportion, show=False)
-    X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
+    # explained_proportion = .99
+    # opt_dim = find_optimal_dimension(X, explained_proportion, show=False)
+    # X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
 
-    print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
-    print(fit_and_score_clfs(clfs, X=X_PCA))
+    # print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
+    # print(fit_and_score_clfs(clfs, X=X_PCA))
 
-    # plot_test_size_influence_over_score(clfs, X=X_PCA)
+    # # plot_test_size_influence_over_score(clfs, X=X_PCA)
+
+    plot_dim_influence_over_scores(clfs)
