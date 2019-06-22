@@ -120,6 +120,10 @@ def apply_PCA(data, explained_proportion=None):
     return data
 
 def plot_dim_influence_over_scores(clfs, X=X, y=y, score_function=fit_and_score_clfs, **kwargs):
+    '''
+        Given a dict of classifiers, plot their score as a function of 
+        the number of dimension kept in the PCA (in decreasing order of variance explanation).
+    '''
     scores_dict = {name:list() for name in clfs.keys()}
     prop_list = np.arange(1, X.shape[1]+1)
 
@@ -135,14 +139,16 @@ def plot_dim_influence_over_scores(clfs, X=X, y=y, score_function=fit_and_score_
         plt.plot(prop_list, scores_list, label=name)
 
     plt.legend()
-    plt.xlabel('Explained proportion')
+    plt.xlabel('Nb of features kept')
     plt.ylabel('Score')
     plt.show()
 
-def plot_feature_importance(clf, X=X, y=y):
+def plot_feature_importance(clf, X=X, y=y, feature_names=feature_names):
     '''
-        Fitted on (X, y)
-        clf: classifier with feature_importances_ attribute.
+        Given a classifier clf and a fitting set (X, y), fit the clf 
+        and plot the importance of each feature.
+        
+        clf: classifier with feature_importances_ attribute. 
     '''
     clf.fit(X, y)
     feature_importance = dict(zip(feature_names, clf.feature_importances_))
@@ -163,19 +169,21 @@ if __name__ == '__main__':
     }
 
     # print('Scores on raw data :')
-    print(fit_and_score_clfs(clfs, X=X))
+    # print(fit_and_score_clfs(clfs, X=X))
     # # plot_test_size_influence_over_score(clfs, X=X)
 
 
-    explained_proportion = None#.99
+    explained_proportion = None
     # opt_dim = find_optimal_dimension(X, explained_proportion, show=False)
     X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
 
     # print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
     # print(fit_and_score_clfs(clfs, X=X_PCA))
 
-    # # plot_test_size_influence_over_score(clfs, X=X_PCA)
+    # plot_test_size_influence_over_score(clfs, X=X_PCA)
 
+
+    # Influence of the nb of features kept over the score
     # plot_dim_influence_over_scores(clfs, score_function=cross_validate_clfs)
 
     # Cross validation
@@ -183,6 +191,6 @@ if __name__ == '__main__':
     # print(cross_validate_clfs(clfs, X=X_PCA, y=y))
 
     # Feature importance
-    plot_feature_importance(clfs['RandomForestClassifier'], X=X, y=y)
-    plot_feature_importance(clfs['RandomForestClassifier'], X=X_PCA, y=y)
+    # plot_feature_importance(clfs['RandomForestClassifier'], X=X, y=y)
+    # plot_feature_importance(clfs['RandomForestClassifier'], X=X_PCA, y=y)
 
