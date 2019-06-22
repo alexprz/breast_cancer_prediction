@@ -34,12 +34,12 @@ def fit_and_score_clfs(clfs, X=X, y=y, test_size=0.5):
 
     return scores
 
-def cross_validate_clfs(clfs, X=X, y=y):
+def cross_validate_clfs(clfs, X=X, y=y, cv=5):
     scores = dict()
     
     for name, clf in clfs.items():
         print('Cross validating {}...'.format(name))
-        scores[name] = np.mean(cross_validate(clf, X, y, cv=5)['test_score'])
+        scores[name] = np.mean(cross_validate(clf, X, y, cv=cv)['test_score'])
 
     return scores
 
@@ -118,14 +118,14 @@ def apply_PCA(data, explained_proportion=None):
     data = pipeline.fit_transform(data)
     return data
 
-def plot_dim_influence_over_scores(clfs, X=X, y=y, test_size=0.5):
+def plot_dim_influence_over_scores(clfs, X=X, y=y, score_function=fit_and_score_clfs, **kwargs):
     scores_dict = {name:list() for name in clfs.keys()}
     prop_list = np.arange(1, X.shape[1]+1)
 
     for prop in prop_list:
         X_PCA = apply_PCA(X, explained_proportion=prop)
         print(prop)
-        new_scores = fit_and_score_clfs(clfs, X=X_PCA, y=y, test_size=test_size)
+        new_scores = score_function(clfs, X=X_PCA, y=y, **kwargs)
         for name, score in scores_dict.items():
             score.append(new_scores[name])
 
@@ -161,8 +161,9 @@ if __name__ == '__main__':
 
     # # plot_test_size_influence_over_score(clfs, X=X_PCA)
 
-    # plot_dim_influence_over_scores(clfs)
+    # plot_dim_influence_over_scores(clfs, score_function=cross_validate_clfs)
 
     # Cross validation
-    print(cross_validate_clfs(clfs, X=X_PCA, y=y))
+    # print(cross_validate_clfs(clfs, X=X, y=y))
+    # print(cross_validate_clfs(clfs, X=X_PCA, y=y))
 
