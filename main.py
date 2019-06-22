@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, cross_validate
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 from matplotlib import pyplot as plt
@@ -15,6 +15,7 @@ random_state = 1
 df = pd.read_csv('data.csv')
 y = np.array(df['diagnosis'] == 'M').astype(int)
 X = np.array(df)[:, 2:-1]
+feature_names = np.array(df.columns)[2:-1]
 
 
 def fit_and_score_clfs(clfs, X=X, y=y, test_size=0.5):
@@ -138,17 +139,31 @@ def plot_dim_influence_over_scores(clfs, X=X, y=y, score_function=fit_and_score_
     plt.ylabel('Score')
     plt.show()
 
+def plot_feature_importance(clf, X=X, y=y):
+    '''
+        Fitted on (X, y)
+        clf: classifier with feature_importances_ attribute.
+    '''
+    clf.fit(X, y)
+    feature_importance = dict(zip(feature_names, clf.feature_importances_))
+    sorted_feature_importance = np.array(sorted(feature_importance.items(), key=lambda x: x[1]))
+
+    plt.barh(sorted_feature_importance[:, 0], sorted_feature_importance[:, 1].astype(float))
+    plt.xlabel('Feature importance')
+    plt.show()
+
 if __name__ == '__main__':
 
     clfs = {
         'RandomForestClassifier': RandomForestClassifier(n_estimators=100, random_state=random_state),
         'LogisticRegression': LogisticRegression(solver='lbfgs', random_state=random_state),
         'LinearSVC': LinearSVC(max_iter= 1000, random_state=random_state),
-        'GradientBoostingClassifier': GradientBoostingClassifier(random_state=random_state)
+        'GradientBoostingClassifier': GradientBoostingClassifier(random_state=random_state),
+        'ExtraTreesClassifier': ExtraTreesClassifier(random_state=random_state)
     }
 
     # print('Scores on raw data :')
-    # print(fit_and_score_clfs(clfs, X=X))
+    print(fit_and_score_clfs(clfs, X=X))
     # # plot_test_size_influence_over_score(clfs, X=X)
 
 
@@ -166,4 +181,8 @@ if __name__ == '__main__':
     # Cross validation
     # print(cross_validate_clfs(clfs, X=X, y=y))
     # print(cross_validate_clfs(clfs, X=X_PCA, y=y))
+
+    # Feature importance
+    plot_feature_importance(clfs['RandomForestClassifier'], X=X, y=y)
+    plot_feature_importance(clfs['RandomForestClassifier'], X=X_PCA, y=y)
 
