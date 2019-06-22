@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
@@ -31,6 +31,15 @@ def fit_and_score_clfs(clfs, X=X, y=y, test_size=0.5):
     for name, clf in clfs.items():
         clf.fit(X_train, y_train)
         scores[name] = clf.score(X_test, y_test)
+
+    return scores
+
+def cross_validate_clfs(clfs, X=X, y=y):
+    scores = dict()
+    
+    for name, clf in clfs.items():
+        print('Cross validating {}...'.format(name))
+        scores[name] = np.mean(cross_validate(clf, X, y, cv=5)['test_score'])
 
     return scores
 
@@ -143,13 +152,17 @@ if __name__ == '__main__':
     # # plot_test_size_influence_over_score(clfs, X=X)
 
 
-    # explained_proportion = .99
+    explained_proportion = None#.99
     # opt_dim = find_optimal_dimension(X, explained_proportion, show=False)
-    # X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
+    X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
 
     # print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
     # print(fit_and_score_clfs(clfs, X=X_PCA))
 
     # # plot_test_size_influence_over_score(clfs, X=X_PCA)
 
-    plot_dim_influence_over_scores(clfs)
+    # plot_dim_influence_over_scores(clfs)
+
+    # Cross validation
+    print(cross_validate_clfs(clfs, X=X_PCA, y=y))
+
