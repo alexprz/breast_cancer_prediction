@@ -1,21 +1,33 @@
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.pipeline import Pipeline
 
 random_state = 1
 
 # Get X, y arrays from dataframe
 df = pd.read_csv('data.csv')
+df.drop(['id', df.columns[-1]], axis=1, inplace=True)
+
+y_df = df['diagnosis']
+X_df = df.drop(['diagnosis'], axis=1)
+
+df_normalized = pd.DataFrame(MinMaxScaler().fit_transform(X_df.values), columns=X_df.columns, index=X_df.index)
+df_normalized['diagnosis'] = df['diagnosis']
+# print(df_normalized)
+# print(df)
+# print(X_df)
+# print(y_df)
 y = np.array(df['diagnosis'] == 'M').astype(int)
 X = np.array(df)[:, 2:-1]
-feature_names = np.array(df.columns)[2:-1]
+feature_names = np.array(X_df.columns)
 
 
 def fit_and_score_clfs(clfs, X=X, y=y, test_size=0.5):
@@ -158,6 +170,32 @@ def plot_feature_importance(clf, X=X, y=y, feature_names=feature_names):
     plt.xlabel('Feature importance')
     plt.show()
 
+def visualization():
+    # plt.barh(['Bénigne', 'Maligne'], [np.sum(y == 1), np.sum(y == 0)])
+    # plt.xlabel('Nombre d\'entrées')
+    # plt.show()
+    # tips = sns.load_dataset("tips")
+    # print(tips)
+    # my_list = list(df.columns[1:10])
+    # print(my_list)
+    # df_normalized = pd.DataFrame(MinMaxScaler().fit_transform(df.values), columns=df.columns, index=df.index)
+    feature_names_reshaped = np.reshape(feature_names, (3, -1))
+    # print(features)
+    # print(np.append(features[0], 'diagnosis'))
+    for k in range(feature_names_reshaped.shape[0]):
+        df_reduce = df_normalized[np.append(feature_names_reshaped[k], 'diagnosis')]
+        print(df_reduce)
+        df_melt = df_reduce.melt(id_vars=['diagnosis'])
+        print(df_melt)
+        sns.violinplot(x='variable', y='value', hue='diagnosis',
+                   split=True, inner="quart",
+                   scale='area',
+                   data=df_melt)
+        sns.despine(left=True)
+        plt.xticks(rotation=90)
+        plt.show()
+    pass
+
 if __name__ == '__main__':
 
     clfs = {
@@ -193,4 +231,6 @@ if __name__ == '__main__':
     # Feature importance
     # plot_feature_importance(clfs['RandomForestClassifier'], X=X, y=y)
     # plot_feature_importance(clfs['RandomForestClassifier'], X=X_PCA, y=y)
+
+    visualization()
 
