@@ -171,22 +171,16 @@ def plot_feature_importance(clf, X=X, y=y, feature_names=feature_names):
     plt.show()
 
 def visualization():
-    # plt.barh(['Bénigne', 'Maligne'], [np.sum(y == 1), np.sum(y == 0)])
-    # plt.xlabel('Nombre d\'entrées')
-    # plt.show()
-    # tips = sns.load_dataset("tips")
-    # print(tips)
-    # my_list = list(df.columns[1:10])
-    # print(my_list)
-    # df_normalized = pd.DataFrame(MinMaxScaler().fit_transform(df.values), columns=df.columns, index=df.index)
+    # B/M plot
+    plt.barh(['Bénigne', 'Maligne'], [np.sum(y == 1), np.sum(y == 0)])
+    plt.xlabel('Nombre d\'entrées')
+    plt.show()
+
+    # Violin plot
     feature_names_reshaped = np.reshape(feature_names, (3, -1))
-    # print(features)
-    # print(np.append(features[0], 'diagnosis'))
     for k in range(feature_names_reshaped.shape[0]):
-        df_reduce = df_normalized[np.append(feature_names_reshaped[k], 'diagnosis')]
-        print(df_reduce)
-        df_melt = df_reduce.melt(id_vars=['diagnosis'])
-        print(df_melt)
+        df_reduced = df_normalized[np.append(feature_names_reshaped[k], 'diagnosis')]
+        df_melt = df_reduced.melt(id_vars=['diagnosis'])
         sns.violinplot(x='variable', y='value', hue='diagnosis',
                    split=True, inner="quart",
                    scale='area',
@@ -194,7 +188,7 @@ def visualization():
         sns.despine(left=True)
         plt.xticks(rotation=90)
         plt.show()
-    pass
+    
 
 if __name__ == '__main__':
 
