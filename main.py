@@ -21,6 +21,10 @@ X_df = df.drop(['diagnosis'], axis=1)
 
 df_normalized = pd.DataFrame(MinMaxScaler().fit_transform(X_df.values), columns=X_df.columns, index=X_df.index)
 df_normalized['diagnosis'] = df['diagnosis']
+
+df_standard_normalized = pd.DataFrame(StandardScaler().fit_transform(X_df.values), columns=X_df.columns, index=X_df.index)
+X_standard_normalized = np.array(df_standard_normalized)
+df_standard_normalized['diagnosis'] = df['diagnosis']
 # print(df_normalized)
 # print(df)
 # print(X_df)
@@ -29,6 +33,9 @@ df_normalized['diagnosis'] = df['diagnosis']
 # X = np.array(df)[:, 2:-1]
 y = np.array(y_df == 'M').astype(int)
 X = np.array(X_df)
+
+print(df_standard_normalized)
+print(X_standard_normalized)
 feature_names = np.array(X_df.columns)
 
 
@@ -119,7 +126,7 @@ def find_optimal_dimension(data, explained_proportion, show=False):
 
     return p
 
-def apply_PCA(data, explained_proportion=None):
+def apply_PCA(data, explained_proportion=None, normalize=True):
     '''
         Given a data array, normalize the data, apply PCA and reduce the dimension to
         explain the given proportion of variance.
@@ -129,9 +136,12 @@ def apply_PCA(data, explained_proportion=None):
     '''
     pca = PCA(n_components=explained_proportion)
 
-    # Important : Normalize data to have homogenous features
-    pipeline = Pipeline([('scaling', StandardScaler()), ('pca', pca)])
-    data = pipeline.fit_transform(data)
+    if normalize:
+        # Important : Normalize data to have homogenous features
+        pipeline = Pipeline([('scaling', StandardScaler()), ('pca', pca)])
+        data = pipeline.fit_transform(data)
+    else:
+        data = pca.fit_transform(data)
     return data
 
 def plot_dim_influence_over_scores(clfs, X=X, y=y, score_function=fit_and_score_clfs, **kwargs):
@@ -214,16 +224,14 @@ def visualization():
     sns.heatmap(corr, mask=mask, annot=True, fmt=".1f", linewidths=.7)
     plt.show()
 
-def plot_scores(clfs, X_array, y, Names_array, y_label, score_function, **kwargs):
-    n_clf = len(clfs)
-    n_names = len(Names_array)
+def plot_scores(clfs, X_dict, y, y_label, score_function, **kwargs):
+    # n_clf = len(clfs)
+    # n_names = len(Names_array)
     # for clf_name, clf in clfs.items():
     # df_array = np.zeros((n_clf*n_names, 3))
     # i = 0
     df_list = []
-    for k in range(n_names):
-        data_name = Names_array[k]
-        data = X_array[k]
+    for data_name, data in X_dict.items():
         scores = score_function(clfs, X=data, y=y, **kwargs)
         # print(scores)
         for clf_name, score in scores.items():
@@ -246,7 +254,6 @@ def plot_scores(clfs, X_array, y, Names_array, y_label, score_function, **kwargs
     plt.ylim(bottom=0.8)
     plt.show()
 
-    pass
 
 if __name__ == '__main__':
 
@@ -265,8 +272,10 @@ if __name__ == '__main__':
 
     explained_proportion = None
     # opt_dim = find_optimal_dimension(X, explained_proportion, show=True)
-    X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
+    X_PCA_100 = apply_PCA(X, explained_proportion=30)
     X_PCA_99 = apply_PCA(X, explained_proportion=.99)
+    X_PCA_95 = apply_PCA(X, explained_proportion=.95)
+    X_PCA_non_normalized = apply_PCA(X, explained_proportion=30, normalize=False)
 
     # print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
     # print(fit_and_score_clfs(clfs, X=X_PCA))
@@ -287,5 +296,14 @@ if __name__ == '__main__':
 
     # visualization()
 
-    plot_scores(clfs, [X, X_PCA, X_PCA_99], y, ['Raw', 'PCA', 'PCA 99%'], 'CrossValidation score', score_function=cross_validate_clfs, cv=5)
+    # plot_scores(clfs, [X, X_PCA, X_PCA_99], y, ['Raw', 'PCA', 'PCA 99%'], 'Score', score_function=fit_and_score_clfs, test_size=0.5)
+    
+    X_dict = {
+        'Raw': X,
+        'Normalized': X_standard_normalized,
+        'Normalized + PCA 100%': X_PCA_100,
+        'Normalized + PCA 99%': X_PCA_99,
+        'PCA 100%': X_PCA_non_normalized
+    }
+    plot_scores(clfs, X_dict, y, 'CrossValidation score', score_function=cross_validate_clfs, cv=5)
 
