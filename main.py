@@ -2,13 +2,20 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 from sklearn.model_selection import train_test_split, cross_validate
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, ExtraTreesClassifier, AdaBoostClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC
+from sklearn.svm import LinearSVC, SVC
 from matplotlib import pyplot as plt
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.pipeline import Pipeline
+from sklearn.gaussian_process import GaussianProcessClassifier
+from sklearn.gaussian_process.kernels import RBF
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 random_state = 1
 
@@ -242,6 +249,9 @@ def plot_scores(clfs, X_dict, y, y_label, score_function, **kwargs):
     df = pd.DataFrame(df_list, columns=['Data', 'clf_name', 'score'])
     print(df)
 
+    max_row = df.loc[df['score'].argmax()]
+    print('Maximum atteint pour :\n {}'.format(max_row))
+
     # Load the example Titanic dataset
     # titanic = sns.load_dataset("titanic")
 
@@ -249,10 +259,12 @@ def plot_scores(clfs, X_dict, y, y_label, score_function, **kwargs):
     g = sns.catplot(x="clf_name", y="score", hue="Data", data=df,
                     height=6, kind="bar", palette="muted")
     g.despine(left=True)
-    g.set_ylabels("Score")
+    g.set_ylabels(y_label)
     plt.xticks(rotation=45)
     plt.ylim(bottom=0.8)
+    plt.axhline(max_row['score'], color='r')
     plt.show()
+
 
 
 if __name__ == '__main__':
@@ -262,7 +274,15 @@ if __name__ == '__main__':
         'LogisticRegression': LogisticRegression(solver='lbfgs', random_state=random_state),
         'LinearSVC': LinearSVC(max_iter= 1000, random_state=random_state),
         'GradientBoostingClassifier': GradientBoostingClassifier(random_state=random_state),
-        'ExtraTreesClassifier': ExtraTreesClassifier(random_state=random_state)
+        'ExtraTreesClassifier': ExtraTreesClassifier(random_state=random_state),
+        'GaussianProcessClassifier': GaussianProcessClassifier(1.0 * RBF(1.0)),
+        'AdaBoostClassifier': AdaBoostClassifier(),
+        'KNeighborsClassifier': KNeighborsClassifier(3),
+        'SVC': SVC(),
+        'DecisionTreeClassifier': DecisionTreeClassifier(max_depth=5),
+        'MLPClassifier': MLPClassifier(),
+        'GaussianNB': GaussianNB(),
+        'QuadraticDiscriminantAnalysis': QuadraticDiscriminantAnalysis()
     }
 
     # print('Scores on raw data :')
@@ -275,7 +295,9 @@ if __name__ == '__main__':
     X_PCA_100 = apply_PCA(X, explained_proportion=30)
     X_PCA_99 = apply_PCA(X, explained_proportion=.99)
     X_PCA_95 = apply_PCA(X, explained_proportion=.95)
-    X_PCA_non_normalized = apply_PCA(X, explained_proportion=30, normalize=False)
+    X_PCA_100_non_normalized = apply_PCA(X, explained_proportion=30, normalize=False)
+    X_PCA_99_non_normalized = apply_PCA(X, explained_proportion=.99, normalize=False)
+    X_PCA_95_non_normalized = apply_PCA(X, explained_proportion=.95, normalize=False)
 
     # print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
     # print(fit_and_score_clfs(clfs, X=X_PCA))
@@ -303,7 +325,7 @@ if __name__ == '__main__':
         'Normalized': X_standard_normalized,
         'Normalized + PCA 100%': X_PCA_100,
         'Normalized + PCA 99%': X_PCA_99,
-        'PCA 100%': X_PCA_non_normalized
+        'Normalized + PCA 95%': X_PCA_95
     }
     plot_scores(clfs, X_dict, y, 'CrossValidation score', score_function=cross_validate_clfs, cv=5)
 
