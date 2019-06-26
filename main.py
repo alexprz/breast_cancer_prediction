@@ -25,8 +25,10 @@ df_normalized['diagnosis'] = df['diagnosis']
 # print(df)
 # print(X_df)
 # print(y_df)
-y = np.array(df['diagnosis'] == 'M').astype(int)
-X = np.array(df)[:, 2:-1]
+# y = np.array(df['diagnosis'] == 'M').astype(int)
+# X = np.array(df)[:, 2:-1]
+y = np.array(y_df == 'M').astype(int)
+X = np.array(X_df)
 feature_names = np.array(X_df.columns)
 
 
@@ -91,7 +93,8 @@ def find_optimal_dimension(data, explained_proportion, show=False):
         data : array of shape (n_samples, n_features)
         explained_proportion : float in [0, 1]
     '''
-    pca = PCA()
+    # print(data.shape[1])
+    pca = PCA(data.shape[1])
 
     # Important : Normalize data to have homogenous features
     pipeline = Pipeline([('scaling', StandardScaler()), ('pca', pca)])
@@ -171,24 +174,45 @@ def plot_feature_importance(clf, X=X, y=y, feature_names=feature_names):
     plt.show()
 
 def visualization():
-    # B/M plot
-    plt.barh(['Bénigne', 'Maligne'], [np.sum(y == 1), np.sum(y == 0)])
-    plt.xlabel('Nombre d\'entrées')
-    plt.show()
+    # # B/M plot
+    # plt.barh(['Bénigne', 'Maligne'], [np.sum(y == 1), np.sum(y == 0)])
+    # plt.xlabel('Nombre d\'entrées')
+    # plt.show()
 
-    # Violin plot
-    feature_names_reshaped = np.reshape(feature_names, (3, -1))
-    for k in range(feature_names_reshaped.shape[0]):
-        df_reduced = df_normalized[np.append(feature_names_reshaped[k], 'diagnosis')]
-        df_melt = df_reduced.melt(id_vars=['diagnosis'])
-        sns.violinplot(x='variable', y='value', hue='diagnosis',
-                   split=True, inner="quart",
-                   scale='area',
-                   data=df_melt)
-        sns.despine(left=True)
-        plt.xticks(rotation=90)
-        plt.show()
-    
+    # # Violin plot
+    # feature_names_reshaped = np.reshape(feature_names, (3, -1))
+    # for k in range(feature_names_reshaped.shape[0]):
+    #     df_reduced = df_normalized[np.append(feature_names_reshaped[k], 'diagnosis')]
+    #     df_melt = df_reduced.melt(id_vars=['diagnosis'])
+    #     sns.violinplot(x='variable', y='value', hue='diagnosis',
+    #                split=True, inner="quart",
+    #                scale='area',
+    #                data=df_melt)
+    #     sns.despine(left=True)
+    #     plt.xticks(rotation=90)
+    #     plt.xlabel('')
+    #     plt.show()
+
+    # Correlation
+    # Compute the correlation matrix
+    corr = X_df.corr()
+
+    # # Generate a mask for the upper triangle
+    mask = np.zeros_like(corr, dtype=np.bool)
+    mask[np.triu_indices_from(mask)] = True
+
+    # # Set up the matplotlib figure
+    # f, ax = plt.subplots(figsize=(11, 9))
+
+    # # Generate a custom diverging colormap
+    # cmap = sns.diverging_palette(220, 10, as_cmap=True)
+
+    # # Draw the heatmap with the mask and correct aspect ratio
+    # sns.heatmap(corr, mask=mask, cmap=cmap, vmax=1, center=0,
+    #             square=True, linewidths=.5, cbar_kws={"shrink": .5})
+    f, ax = plt.subplots(figsize=(12, 10))
+    sns.heatmap(corr, mask=mask, annot=True, fmt=".1f", linewidths=.7)
+    plt.show()
 
 if __name__ == '__main__':
 
@@ -205,9 +229,9 @@ if __name__ == '__main__':
     # # plot_test_size_influence_over_score(clfs, X=X)
 
 
-    explained_proportion = None
-    # opt_dim = find_optimal_dimension(X, explained_proportion, show=False)
-    X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
+    explained_proportion = .99
+    opt_dim = find_optimal_dimension(X, explained_proportion, show=True)
+    # X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
 
     # print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
     # print(fit_and_score_clfs(clfs, X=X_PCA))
@@ -226,5 +250,5 @@ if __name__ == '__main__':
     # plot_feature_importance(clfs['RandomForestClassifier'], X=X, y=y)
     # plot_feature_importance(clfs['RandomForestClassifier'], X=X_PCA, y=y)
 
-    visualization()
+    # visualization()
 
