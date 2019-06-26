@@ -214,6 +214,40 @@ def visualization():
     sns.heatmap(corr, mask=mask, annot=True, fmt=".1f", linewidths=.7)
     plt.show()
 
+def plot_scores(clfs, X_array, y, Names_array, y_label, score_function, **kwargs):
+    n_clf = len(clfs)
+    n_names = len(Names_array)
+    # for clf_name, clf in clfs.items():
+    # df_array = np.zeros((n_clf*n_names, 3))
+    # i = 0
+    df_list = []
+    for k in range(n_names):
+        data_name = Names_array[k]
+        data = X_array[k]
+        scores = score_function(clfs, X=data, y=y, **kwargs)
+        # print(scores)
+        for clf_name, score in scores.items():
+            df_list.append([data_name, clf_name, score])
+            # i += 1
+
+    # print(df_list)
+    df = pd.DataFrame(df_list, columns=['Data', 'clf_name', 'score'])
+    print(df)
+
+    # Load the example Titanic dataset
+    # titanic = sns.load_dataset("titanic")
+
+    # # Draw a nested barplot to show survival for class and sex
+    g = sns.catplot(x="clf_name", y="score", hue="Data", data=df,
+                    height=6, kind="bar", palette="muted")
+    g.despine(left=True)
+    g.set_ylabels("Score")
+    plt.xticks(rotation=45)
+    plt.ylim(bottom=0.8)
+    plt.show()
+
+    pass
+
 if __name__ == '__main__':
 
     clfs = {
@@ -229,9 +263,10 @@ if __name__ == '__main__':
     # # plot_test_size_influence_over_score(clfs, X=X)
 
 
-    explained_proportion = .99
-    opt_dim = find_optimal_dimension(X, explained_proportion, show=True)
-    # X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
+    explained_proportion = None
+    # opt_dim = find_optimal_dimension(X, explained_proportion, show=True)
+    X_PCA = apply_PCA(X, explained_proportion=explained_proportion)
+    X_PCA_99 = apply_PCA(X, explained_proportion=.99)
 
     # print('Scores on PCA data reduced to {} dimensions to explain {}% of the variance :'.format(X_PCA.shape[1], explained_proportion))
     # print(fit_and_score_clfs(clfs, X=X_PCA))
@@ -251,4 +286,6 @@ if __name__ == '__main__':
     # plot_feature_importance(clfs['RandomForestClassifier'], X=X_PCA, y=y)
 
     # visualization()
+
+    plot_scores(clfs, [X, X_PCA, X_PCA_99], y, ['Raw', 'PCA', 'PCA 99%'], 'CrossValidation score', score_function=cross_validate_clfs, cv=5)
 
