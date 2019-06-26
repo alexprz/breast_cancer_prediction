@@ -232,30 +232,19 @@ def visualization():
     plt.show()
 
 def plot_scores(clfs, X_dict, y, y_label, score_function, **kwargs):
-    # n_clf = len(clfs)
-    # n_names = len(Names_array)
-    # for clf_name, clf in clfs.items():
-    # df_array = np.zeros((n_clf*n_names, 3))
-    # i = 0
     df_list = []
     for data_name, data in X_dict.items():
         scores = score_function(clfs, X=data, y=y, **kwargs)
-        # print(scores)
+
         for clf_name, score in scores.items():
             df_list.append([data_name, clf_name, score])
-            # i += 1
 
-    # print(df_list)
     df = pd.DataFrame(df_list, columns=['Data', 'clf_name', 'score'])
     print(df)
 
     max_row = df.loc[df['score'].argmax()]
     print('Maximum atteint pour :\n {}'.format(max_row))
 
-    # Load the example Titanic dataset
-    # titanic = sns.load_dataset("titanic")
-
-    # # Draw a nested barplot to show survival for class and sex
     g = sns.catplot(x="clf_name", y="score", hue="Data", data=df,
                     height=6, kind="bar", palette="muted")
     g.despine(left=True)
@@ -264,7 +253,6 @@ def plot_scores(clfs, X_dict, y, y_label, score_function, **kwargs):
     plt.ylim(bottom=0.8)
     plt.axhline(max_row['score'], color='r')
     plt.show()
-
 
 
 if __name__ == '__main__':
@@ -318,8 +306,6 @@ if __name__ == '__main__':
 
     # visualization()
 
-    # plot_scores(clfs, [X, X_PCA, X_PCA_99], y, ['Raw', 'PCA', 'PCA 99%'], 'Score', score_function=fit_and_score_clfs, test_size=0.5)
-    
     X_dict = {
         'Raw': X,
         'Normalized': X_standard_normalized,
